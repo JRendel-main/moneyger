@@ -8,20 +8,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const supabase = createClient();
   const router = useRouter();
 
-  const handleLogin = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
+  const handleRegister = async () => {
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) alert(error.message);
     else router.push("/dashboard");
   };
@@ -31,7 +25,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm bg-zinc-900 border-zinc-700">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
-            Login to Moneyger
+            Register to Moneyger
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -47,13 +41,13 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Button className="w-full" onClick={handleLogin} disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+          <Button className="w-full" onClick={handleRegister}>
+            Register
           </Button>
           <p className="text-center text-sm text-zinc-400">
-            Don't have an account?{" "}
-            <Link className="text-green-400 hover:underline" href="/register">
-              Register
+            Already have an account?{" "}
+            <Link className="text-green-400 hover:underline" href="/login">
+              Login
             </Link>
           </p>
         </CardContent>

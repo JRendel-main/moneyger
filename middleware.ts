@@ -1,30 +1,73 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+// middleware.ts
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextRequest, NextResponse } from 'next/server';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+export async function middleware(req: NextRequest) {
+  let res = NextResponse.next();
 
-export async function middleware(request: NextRequest) {
-  const url = request.nextUrl.clone()
-
-  const token = request.cookies.get('sb-access-token')?.value
-
-  if (!token) {
-    // No token, redirect to login
-    if (url.pathname.startsWith('/dashboard')) {
-      url.pathname = '/login'
-      return NextResponse.redirect(url)
+  // Create Supabase client for middleware
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          res = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          res = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          res.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
     }
-    return NextResponse.next()
+  );
+
+  // Get the session
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // Protect dashboard route
+  if (req.nextUrl.pathname.startsWith('/dashboard') && !session) {
+    return NextResponse.redirect(new URL('/auth', req.url));
   }
 
-  return NextResponse.next()
+  // Redirect authenticated users from auth page
+  if (req.nextUrl.pathname === '/auth' && session) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
+  return res;
 }
 
-// Apply only to these routes
 export const config = {
-  matcher: ['/dashboard/:path*'],
-}
+  matcher: ['/dashboard/:path*', '/auth'],
+};

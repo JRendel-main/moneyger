@@ -1,14 +1,5 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import SupabaseProvider from "@/components/supabase-provider";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
-
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "MoneyGer - Smart Budget Management",
-  description: "Track your expenses, manage your budget, and achieve your financial goals with MoneyGer",
-};
 
 export default function RootLayout({
   children,
@@ -16,16 +7,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+    <html lang="en">
+      <body>
+        <SupabaseProvider>{children}</SupabaseProvider>
       </body>
     </html>
   );
